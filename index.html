@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مذاكرة — منصة الامتحانات الإلكترونية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+(function(){
+  try{
+    const low=(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||navigator.connection?.saveData;
+    if(low) document.documentElement.classList.add("performance-mode");
+  }catch(e){}
+})();
+</script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#123f30">
+<meta name="mobile-web-app-capable" content="yes">
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">📚</div>
+    <h1>مذاكرة</h1>
+    <p id="loginTitle">سجّل دخولك واحفظ تقدمك وشعلتك على هذا الجهاز.</p>
+    <input class="login-input" id="loginName" placeholder="اسم الطالب" autocomplete="username" maxlength="24">
+    <input class="login-input" id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password" minlength="6">
+    <div id="signupOnly" class="signup-only">
+      <div class="avatar-picker">
+        <input type="file" id="signupAvatar" accept="image/*" hidden onchange="previewSignupAvatar(this)">
+        <button type="button" class="avatar-pick-btn" onclick="document.getElementById('signupAvatar').click()">
+          <span class="signup-avatar-preview" id="signupAvatarPreview">👤</span>
+          <span><b>صورة الحساب</b><small>PNG / JPG — اختيارية</small></span>
+        </button>
+      </div>
+      <input class="login-input" id="loginPassConfirm" type="password" placeholder="تأكيد كلمة المرور" autocomplete="new-password" minlength="6">
+      <label class="checkline"><input type="checkbox" id="robotCheck"> <span>أنا لست روبوتًا 🤖</span></label>
+      <label class="checkline"><input type="checkbox" id="termsCheck"> <span>أوافق على <button type="button" class="inline-link" onclick="openTerms()">الشروط وسياسة الاستخدام</button></span></label>
+    </div>
+    <button class="login-btn" onclick="submitAuth()" id="authBtn">تسجيل الدخول 🚀</button>
+    <button class="login-switch" onclick="toggleAuthMode()" id="authSwitch">ليس لديك حساب؟ إنشاء حساب</button>
+    <div class="login-msg" id="loginMsg"></div>
+  </div>
+</div>
+
+
+<div class="terms-modal" id="termsModal" aria-hidden="true">
+  <div class="terms-card">
+    <button class="terms-close" onclick="closeTerms()">✕</button>
+    <h2>الشروط وسياسة الاستخدام</h2>
+    <p>استخدم المنصة للتعلم والمراجعة بشكل مسؤول. الحسابات في هذه النسخة تُحفظ محليًا على جهازك، لذلك حذف بيانات المتصفح قد يحذف الحساب والتقدم.</p>
+    <p>لا تشارك كلمة مرورك مع الآخرين. تحقق «أنا لست روبوتًا» هنا تحقق واجهة بسيط وليس CAPTCHA حقيقيًا لخادم.</p>
+    <button class="login-btn" onclick="acceptTerms()">موافق</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">📗</div>
+      <div>
+        <div class="name">مذاكرة</div>
+        <div class="sub">امتحانات إلكترونية لكل المستويات</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="profile-pill" onclick="openSettings()" aria-label="الإعدادات">
+        <span class="top-avatar" id="topAvatar">👤</span>
+        <span id="userNameTop">زائر</span>
+      </button>
+      <button class="iconbtn settings-gear" onclick="openSettings()" title="الإعدادات">⚙️</button>
+      <button class="iconbtn" id="themeBtn">🌙</button>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="hero">
+      <h1 id="greetLine">مرحبًا بك 👋</h1>
+      <p>اختر مستواك، اختبر نفسك، وتابع تقدمك خطوة بخطوة. وما ننساوش القرآن يرافقك في المراجعة.</p>
+    </div>
+
+    <div class="daily-card">
+      <div class="daily-flame">🔥</div>
+      <div><b>الشعلة اليومية</b><small id="dailyStreakText">ابدأ تمرينًا اليوم للمحافظة على الشعلة</small></div>
+      <strong id="dailyStreakCount">0</strong>
+    </div>
+
+    <div class="sectiontitle"><h2>ماذا تريد أن تدرس اليوم؟</h2></div>
+    <div class="levels">
+      <button class="levelcard" data-level="ابتدائي" onclick="goGrades(this)">
+        <span class="ic">🟢</span><b>ابتدائي</b><small>1 - 5</small>
+      </button>
+      <button class="levelcard" data-level="متوسط" onclick="goGrades(this)">
+        <span class="ic">🔵</span><b>متوسط</b><small>1 - 4</small>
+      </button>
+      <button class="levelcard" data-level="ثانوي" onclick="goGrades(this)">
+        <span class="ic">🟣</span><b>ثانوي</b><small>1 - 3</small>
+      </button>
+    </div>
+
+    <div class="sectiontitle"><h2>وصول سريع</h2></div>
+    <div class="quicklinks">
+      <button class="quicklink" onclick="showScreen('screen-quran')">
+        <span class="ic">🎧</span><div><b>الدراسة مع القرآن</b><small>شغّل التلاوة أثناء المراجعة</small></div>
+      </button>
+      <button class="quicklink" onclick="showScreen('screen-progress'); renderProgress();">
+        <span class="ic">📊</span><div><b>تقدمي وإنجازاتي</b><small id="ptsQuick">0 نقطة</small></div>
+      </button>
+      <button class="quicklink" onclick="showScreen('screen-tools'); initCenturyTools();">
+        <span class="ic">⚡</span><div><b>مركز الأدوات الذكي</b><small>تركيز · خطة · بطاقات · نسخ احتياطي</small></div>
+      </button>
+    </div>
+  </section>
+
+  <!-- GRADES -->
+  <section class="screen" id="screen-grades">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-home')">→</button>
+      <div class="crumb">المستوى: <b id="crumbLevel"></b></div>
+    </div>
+    <div class="sectiontitle"><h2>اختر السنة الدراسية</h2></div>
+    <div class="grid3" id="gradesGrid"></div>
+  </section>
+
+  <!-- SUBJECTS -->
+  <section class="screen" id="screen-subjects">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-grades')">→</button>
+      <div class="crumb"><b id="crumbGrade"></b></div>
+    </div>
+    <div class="sectiontitle"><h2>اختر المادة</h2></div>
+    <div class="grid2" id="subjectsGrid"></div>
+  </section>
+
+  <!-- EXAM SETUP -->
+  <section class="screen" id="screen-setup">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-subjects')">→</button>
+      <div class="crumb" id="crumbSubject"></div>
+    </div>
+    <div class="examcard">
+      <h3 id="setupTitle">إعداد الامتحان</h3>
+      <p>مرحلة واحدة فقط لكل مادة حاليًا. الأسئلة متنوعة وتتجدد تلقائيًا.</p><div class="stagebadge">🏁 المرحلة 1 · الحالية</div><div class="locknote">بعد إتمام هذه المرحلة في هذه المادة والسنة، تُغلق 🔒 ولا يمكن إعادة فتحها حتى يصل تحديث جديد للموقع.</div><div class="ai-note">🤖 نمط ذكي: ينوّع نوع السؤال والخيارات بدل تكرار نفس السؤال.</div>
+      <div class="optrow">
+        <b>عدد الأسئلة</b>
+        <div class="pillgroup" id="qcountPills">
+          <button class="pill" data-v="5" onclick="setPick(this,'count')">5</button>
+          <button class="pill on" data-v="10" onclick="setPick(this,'count')">10</button>
+          <button class="pill" data-v="15" onclick="setPick(this,'count')">15</button>
+        </div>
+      </div>
+      <div class="optrow">
+        <b>الوقت لكل سؤال</b>
+        <div class="pillgroup" id="timePills">
+          <button class="pill" data-v="20" onclick="setPick(this,'time')">20 ث</button>
+          <button class="pill on" data-v="40" onclick="setPick(this,'time')">40 ث</button>
+          <button class="pill" data-v="60" onclick="setPick(this,'time')">60 ث</button>
+        </div>
+      </div>
+      <div class="optrow">
+        <b>تشغيل القرآن أثناء الامتحان</b>
+        <div class="pillgroup">
+          <button class="pill" id="qtoggleOff" onclick="setQuranDuringExam(false)">لا</button>
+          <button class="pill on" id="qtoggleOn" onclick="setQuranDuringExam(true)">نعم</button>
+        </div>
+      </div>
+      <button class="startbtn" onclick="startExam()">ابدأ الامتحان 🚀</button>
+    </div>
+  </section>
+
+  <!-- EXAM RUNNER -->
+  <section class="screen" id="screen-exam">
+    <div class="examtop">
+      <div class="qcount" id="examQCount">السؤال 1 من 10</div>
+      <div class="timer" id="examTimer">⏱ 40</div>
+    </div>
+    <div class="progressbar"><i id="examProgress" style="width:10%"></i></div>
+    <div class="qcard">
+      <div class="qtext" id="examQText">...</div>
+      <div id="examOpts"></div>
+    </div>
+    <div class="navrow">
+      <button class="navbtn primary" id="examNextBtn" onclick="nextQuestion()">السؤال التالي ←</button>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="screen" id="screen-results">
+    <div class="resultwrap">
+      <h2 style="color:var(--green-deep);margin-bottom:2px">نتيجة الامتحان</h2>
+      <div style="opacity:.55;font-size:13px;margin-bottom:6px" id="resultSubtitle"></div>
+      <div class="scorering" id="scoreRing" style="--pct:0">
+        <b id="scorePct">0%</b><span>النتيجة</span>
+      </div>
+      <div class="statsrow">
+        <div><b style="color:var(--green)" id="correctCount">0</b><small>إجابات صحيحة</small></div>
+        <div><b style="color:var(--red)" id="wrongCount">0</b><small>إجابات خاطئة</small></div>
+      </div>
+      <div class="pointsbanner" id="pointsBanner">+0 نقطة 🏆</div>
+      <div class="navrow">
+        <button class="navbtn" onclick="showScreen('screen-review')">راجع الأخطاء 📋</button>
+        <button class="navbtn primary" onclick="showScreen('screen-home')">الرئيسية 🏠</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section class="screen" id="screen-review">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-results')">→</button>
+      <div class="crumb">مراجعة الإجابات</div>
+    </div>
+    <div id="reviewList"></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="screen" id="screen-progress">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-home')">→</button>
+      <div class="crumb">تقدمي وإنجازاتي</div>
+    </div>
+    <div class="levelbar">
+      <div class="top"><b id="progBadgeName">مبتدئ 🌱</b><small id="progPts">0 نقطة · 🔥 <span id="streakCount">0</span></small></div>
+      <div class="meter"><i id="progMeter" style="width:0%"></i></div>
+    </div>
+    <div class="sectiontitle"><h2>الأوسمة</h2></div>
+    <div class="badgesgrid" id="badgesGrid"></div>
+    <div class="sectiontitle"><h2>سجل الامتحانات</h2><span id="historyCount"></span></div>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- ASSIGNMENTS / TESTS FROM EXAMDZ -->
+  <section class="screen" id="screen-papers">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-home')">→</button>
+      <div class="crumb">الفروض والاختبارات</div>
+    </div>
+    <div class="papers-hero">
+      <div class="papers-icon">📝</div>
+      <div>
+        <h2>فروض واختبارات الفصل 2 و3</h2>
+        <p>مواضيع من بنك ExamDZ، مرتبة حسب الطور والسنة والمادة. اضغط لفتح المواضيع الأصلية.</p>
+      </div>
+    </div>
+    <div class="paper-filters">
+      <label>الطور
+        <select id="papersLevel" onchange="renderPapers()">
+          <option value="متوسط">متوسط</option>
+          <option value="ابتدائي">ابتدائي</option>
+          <option value="ثانوي">ثانوي</option>
+        </select>
+      </label>
+      <label>السنة
+        <select id="papersGrade" onchange="renderPapers()"></select>
+      </label>
+      <label>المادة
+        <select id="papersSubject" onchange="renderPapers()"></select>
+      </label>
+    </div>
+    <div class="semester-grid">
+      <article class="semester-card semester-two">
+        <div class="semester-head"><span>📘</span><div><b>الفصل الثاني</b><small>فروض + اختبارات</small></div></div>
+        <p>افتح مواضيع الفصل الثاني الخاصة بالسنة والمادة المختارة.</p>
+        <button class="paper-open" onclick="openExamDZPaper(2)">عرض مواضيع الفصل الثاني ↗</button>
+      </article>
+      <article class="semester-card semester-three">
+        <div class="semester-head"><span>📕</span><div><b>الفصل الثالث</b><small>فروض + اختبارات</small></div></div>
+        <p>افتح مواضيع الفصل الثالث الخاصة بالسنة والمادة المختارة.</p>
+        <button class="paper-open" onclick="openExamDZPaper(3)">عرض مواضيع الفصل الثالث ↗</button>
+      </article>
+    </div>
+    <div class="source-note">المصدر: ExamDZ · Study DZ يعرض روابط المواضيع الأصلية ولا ينسخ ملفات PDF داخل الموقع.</div>
+  </section>
+
+  <!-- CENTURY TOOLS -->
+  <section class="screen" id="screen-tools">
+    <div class="backrow"><button class="backbtn" onclick="showScreen('screen-home')">→</button><div class="crumb">مركز الأدوات الذكي</div></div>
+    <div class="tools-hero"><div class="tools-orb">⚡</div><div><h2>Study DZ — Century Mode</h2><p>كل ما تحتاجه للمراجعة في مكان واحد: تركيز، خطة، بطاقات، إحصائيات ونسخة احتياطية.</p></div></div>
+    <div class="tool-grid">
+      <button class="tool-card" onclick="openFocusTimer()"><span>⏱️</span><b>وضع التركيز</b><small>جلسة بومودورو بدون تشتيت</small></button>
+      <button class="tool-card" onclick="openPlanner()"><span>🗓️</span><b>خطة اليوم</b><small>أنشئ مهامك وتتبع إنجازك</small></button>
+      <button class="tool-card" onclick="openFlashcards()"><span>🧠</span><b>بطاقات ذكية</b><small>اصنع بطاقات حفظ سريعة</small></button>
+      <button class="tool-card" onclick="showStudyStats()"><span>📈</span><b>تحليلاتي</b><small>نقاط، امتحانات، دقة وشعلة</small></button>
+      <button class="tool-card" onclick="exportStudyData()"><span>💾</span><b>نسخ احتياطي</b><small>احفظ حسابك وتقدمك في ملف</small></button>
+      <button class="tool-card" onclick="document.getElementById('importStudyFile').click()"><span>♻️</span><b>استعادة</b><small>استرجع نسخة محفوظة</small></button>
+      <button class="tool-card" onclick="installStudyApp()"><span>📲</span><b>تثبيت التطبيق</b><small>أضفه للشاشة الرئيسية إن كان مدعومًا</small></button>
+      <button class="tool-card" onclick="quickSearchStudy()"><span>🔎</span><b>بحث سريع</b><small>ابحث داخل أقسام المنصة</small></button>
+    </div>
+    <input id="importStudyFile" type="file" accept="application/json" hidden onchange="importStudyData(this.files[0])">
+    <div id="toolsOutput" class="tools-output"></div>
+  </section>
+
+  <!-- QURAN -->
+  <section class="screen" id="screen-quran">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-home')">→</button>
+      <div class="crumb">الدراسة مع القرآن</div>
+    </div>
+    <div class="qsheet">
+      <h3>🎧 رفيقك في المراجعة</h3>
+      <p class="hint">استمع إلى السور المرفقة مباشرة، ويمكنك أيضًا إضافة ملفات تلاوة من جهازك. تُحفظ إعدادات الصوت والمؤقت تلقائيًا.</p>
+
+      <div class="uploadbox">
+        <b>📂 أضف تلاوات أخرى</b>
+        <small>اختر ملفًا أو أكثر بصيغة mp3 / m4a</small>
+        <input type="file" id="audioInput" accept="audio/*" multiple style="display:none" onchange="handleFiles(this.files)">
+        <button class="filepill" onclick="document.getElementById('audioInput').click()">اختيار ملفات</button>
+      </div>
+
+      <div class="playlist" id="playlistBox"></div>
+
+      <div class="playerbar">
+        <div class="now" id="nowPlaying">لم يتم اختيار تلاوة بعد</div>
+        <div class="transport">
+          <button onclick="playPrev()">⏮</button>
+          <button class="play" id="playPauseBtn" onclick="togglePlay()">▶</button>
+          <button onclick="playNext()">⏭</button>
+        </div>
+        <div class="rowline">
+          <span>🔊</span>
+          <input type="range" id="volumeSlider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+        </div>
+        <div class="rowline">
+          <span>🔁</span>
+          <select id="loopMode" onchange="saveQuranSettings()">
+            <option value="all">تكرار القائمة كاملة</option>
+            <option value="one">تكرار السورة الحالية</option>
+            <option value="none">بدون تكرار</option>
+          </select>
+        </div>
+        <div class="rowline">
+          <span>⏳ إيقاف بعد</span>
+          <select id="sleepTimer" onchange="setSleepTimer(this.value)">
+            <option value="0">بدون مؤقت</option>
+            <option value="15">15 دقيقة</option>
+            <option value="30">30 دقيقة</option>
+            <option value="60">60 دقيقة</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <audio id="audioEl"></audio>
+  </section>
+
+</div>
+
+<!-- SETTINGS DRAWER -->
+<div class="settings-overlay" id="settingsOverlay" onclick="closeSettings()"></div>
+<aside class="settings-drawer" id="settingsDrawer" aria-hidden="true">
+  <div class="settings-head">
+    <div>
+      <small>STUDY DZ</small>
+      <h2 id="settingsTitle">الإعدادات</h2>
+    </div>
+    <button class="settings-close" onclick="closeSettings()">✕</button>
+  </div>
+
+  <div class="settings-profile">
+    <button class="settings-avatar-wrap" onclick="document.getElementById('settingsAvatarInput').click()">
+      <span class="settings-avatar" id="settingsAvatar">👤</span>
+      <i>📷</i>
+    </button>
+    <input type="file" id="settingsAvatarInput" accept="image/*" hidden onchange="changeProfileImage(this)">
+    <div><b id="settingsDisplayName">الطالب</b><small>حساب محلي على هذا الجهاز</small></div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title"><span>👤</span><b id="accountSettingsLabel">الحساب</b></div>
+    <label class="settings-field">
+      <span id="editNameLabel">تعديل الاسم</span>
+      <div class="settings-inline">
+        <input id="settingsNameInput" maxlength="24" placeholder="اسم جديد">
+        <button onclick="saveDisplayName()" id="saveNameBtn">حفظ</button>
+      </div>
+    </label>
+    <button class="settings-action danger" onclick="logout()"><span>🚪</span><b id="logoutLabel">تسجيل الخروج</b></button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title"><span>🌐</span><b id="languageSettingsLabel">اللغة</b></div>
+    <label class="settings-field">
+      <span id="languageLabel">لغة الواجهة</span>
+      <select id="languageSelect" onchange="setAppLanguage(this.value)">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title"><span>✨</span><b id="versionSettingsLabel">نسخة الموقع</b></div>
+    <div class="version-card">
+      <div><span class="version-badge">v2.6</span><b>Study DZ</b></div>
+      <small id="versionText">نسخة 2026 · واجهة جديدة + ExamDZ + حسابات محلية</small>
+    </div>
+  </div>
+</aside>
+
+<div class="miniplayer" id="miniPlayer">
+  <div class="inner">
+    <span>🎧</span>
+    <span id="miniTrackName">تلاوة</span>
+    <button onclick="togglePlay()" id="miniPlayBtn">⏸</button>
+  </div>
+</div>
+
+<div class="bottomnav">
+  <button class="navitem active" data-s="screen-home" onclick="showScreen('screen-home')"><span class="ic">🏠</span>الرئيسية</button>
+  <button class="navitem" data-s="screen-papers" onclick="showScreen('screen-papers'); renderPapers();"><span class="ic">📝</span>الفروض</button>
+  <button class="navitem" data-s="screen-quran" onclick="showScreen('screen-quran')"><span class="ic">🎧</span>القرآن</button>
+  <button class="navitem" data-s="screen-progress" onclick="showScreen('screen-progress'); renderProgress();"><span class="ic">📊</span>تقدمي</button>
+  <button class="navitem" data-s="screen-tools" onclick="showScreen('screen-tools'); initCenturyTools();"><span class="ic">⚡</span>أدوات</button>
+</div>
+
+<script src="js/users.js"></script>
+<script src="js/quran.js"></script>
+<script src="js/app.js"></script>
+<script src="js/century.js"></script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
+</body>
+</html>
