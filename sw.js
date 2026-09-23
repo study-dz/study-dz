@@ -1,4 +1,4 @@
-const CACHE='study-dz-century-v3';
+const CACHE='study-dz-century-v4';
 const CORE=['./','./index.html','./style.css','./js/app.js','./js/users.js','./js/quran.js','./js/century.js','./manifest.webmanifest'];
 
 // Do NOT precache large Quran audio files. They can make app installation

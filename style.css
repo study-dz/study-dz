@@ -442,3 +442,6 @@ body.settings-open{overflow:hidden}
 /* الزائر button: same visual language, light on mobile */
 .الزائر-btn{margin-top:8px;background:rgba(31,111,84,.10)!important;color:var(--green-deep)!important;border:1px solid rgba(31,111,84,.18)!important;}
 .الزائر-btn:active{transform:scale(.98);}
+
+.quran-source-note{margin:10px 0;padding:10px 12px;border-radius:12px;background:rgba(70,130,180,.08);font-size:.9rem}
+.external-badge{margin-inline-start:auto;font-size:.72rem;opacity:.65}
