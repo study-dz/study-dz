@@ -8,6 +8,3 @@ Study DZ — ExamDZ Papers Update
 - تم إصلاح خطأ JavaScript كان يمنع app.js من العمل بسبب تعريف const count مرتين.
 
 المصدر: https://www.examdz.com/exams
-
-
-Performance: Study DZ now has automatic lightweight mode for weak devices. Visual effects remain enabled; blur, shadow, and animation intensity are reduced rather than removed.
