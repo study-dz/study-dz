@@ -293,8 +293,7 @@ button{font-family:inherit;cursor:pointer;}
 .login-input{width:100%;padding:13px 14px;margin:6px 0;border-radius:12px;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);font:inherit;outline:none}
 .login-input:focus{border-color:var(--green)}
 .login-btn{width:100%;padding:14px;border:0;border-radius:13px;background:var(--green);color:#fff;font-weight:800;font-size:15px;margin-top:8px}
-.login-switch{width:100%;border:1.5px solid var(--green);background:transparent;color:var(--green);font:inherit;font-weight:700;font-size:13.5px;margin-top:10px;padding:12px;border-radius:13px;transition:.2s}
-.login-switch:active{background:rgba(31,111,84,.10);transform:scale(.98)}
+.login-switch{border:0;background:none;color:var(--green);font:inherit;margin-top:12px;font-size:12px}
 .login-msg{min-height:18px;color:var(--red);font-size:12px;margin-top:7px}
 .userbox{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);padding:7px 10px;border-radius:12px;font-size:11px}
 .userbox button{border:0;background:none;color:var(--red);font:inherit;font-size:11px}
