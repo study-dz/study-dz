@@ -13,12 +13,21 @@
   try{
     const low=(navigator.deviceMemory&&navigator.deviceMemory<=4)||(navigator.hardwareConcurrency&&navigator.hardwareConcurrency<=4)||navigator.connection?.saveData;
     if(low) document.documentElement.classList.add("performance-mode");
+    // A manual choice from Settings always wins over the automatic guess above.
+    const pref=localStorage.getItem('studydz_effects');
+    if(pref==='on') document.documentElement.classList.remove('performance-mode');
+    if(pref==='off') document.documentElement.classList.add('performance-mode');
   }catch(e){}
 })();
 </script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#123f30">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Study DZ">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
 </head>
 <body>
 
@@ -29,7 +38,7 @@
     <p id="loginTitle">سجّل دخولك واحفظ تقدمك وشعلتك على هذا الجهاز.</p>
     <input class="login-input" id="loginName" placeholder="اسم الطالب" autocomplete="username" maxlength="24">
     <input class="login-input" id="loginPass" type="password" placeholder="كلمة المرور" autocomplete="current-password" minlength="6">
-    <div id="signupOnly" class="signup-only">
+<div id="signupOnly" class="signup-only">
       <div class="avatar-picker">
         <input type="file" id="signupAvatar" accept="image/*" hidden onchange="previewSignupAvatar(this)">
         <button type="button" class="avatar-pick-btn" onclick="document.getElementById('signupAvatar').click()">
@@ -41,10 +50,10 @@
       <label class="checkline"><input type="checkbox" id="robotCheck"> <span>أنا لست روبوتًا 🤖</span></label>
       <label class="checkline"><input type="checkbox" id="termsCheck"> <span>أوافق على <button type="button" class="inline-link" onclick="openTerms()">الشروط وسياسة الاستخدام</button></span></label>
     </div>
-    <button type="button" class="login-btn" onclick="submitAuth()" id="authBtn" data-auth-btn>تسجيل الدخول 🚀</button>
-    <button type="button" class="login-btn الزائر-btn" onclick="continueAsالزائر()" data-auth-btn>الدخول كالزائر 👤</button>
-    <button type="button" class="login-switch" onclick="toggleAuthMode()" id="authSwitch" data-auth-btn>ليس لديك حساب؟ إنشاء حساب</button>
-    <div class="login-msg" id="authLoadingNote" style="opacity:.55;display:none"></div>
+    <button type="button" class="login-btn" onclick="submitAuth()" id="authBtn" data-auth-btn disabled>تسجيل الدخول 🚀</button>
+    <button type="button" class="login-btn guest-btn" onclick="continueAsGuest()" data-auth-btn disabled>الدخول كضيف 👤</button>
+    <button type="button" class="login-switch" onclick="toggleAuthMode()" id="authSwitch" data-auth-btn disabled>ليس لديك حساب؟ إنشاء حساب</button>
+    <div class="login-msg" id="authLoadingNote" style="opacity:.55">جارٍ تجهيز التطبيق...</div>
     <div class="login-msg" id="loginMsg"></div>
   </div>
 </div>
@@ -73,8 +82,9 @@
     <div class="top-actions">
       <button class="profile-pill" onclick="openSettings()" aria-label="الإعدادات">
         <span class="top-avatar" id="topAvatar">👤</span>
-        <span id="userNameTop">الزائر</span>
+        <span id="userNameTop">زائر</span>
       </button>
+      <button class="iconbtn" onclick="openGlobalSearch()" title="بحث سريع">🔎</button>
       <button class="iconbtn settings-gear" onclick="openSettings()" title="الإعدادات">⚙️</button>
       <button class="iconbtn" id="themeBtn">🌙</button>
     </div>
@@ -111,11 +121,14 @@
       <button class="quicklink" onclick="showScreen('screen-quran')">
         <span class="ic">🎧</span><div><b>الدراسة مع القرآن</b><small>شغّل التلاوة أثناء المراجعة</small></div>
       </button>
+      <button class="quicklink" onclick="openSocialHub()">
+        <span class="ic">👥</span><div><b>الأصدقاء والدردشة</b><small>أضف أصدقاء وشارك إنجازاتك</small></div>
+      </button>
       <button class="quicklink" onclick="showScreen('screen-progress'); renderProgress();">
         <span class="ic">📊</span><div><b>تقدمي وإنجازاتي</b><small id="ptsQuick">0 نقطة</small></div>
       </button>
       <button class="quicklink" onclick="showScreen('screen-tools'); initCenturyTools();">
-        <span class="ic">⚡</span><div><b>مركز الأدوات الذكي</b><small>تركيز · خطة · بطاقات · نسخ احتياطي</small></div>
+        <span class="ic">⚡</span><div><b>مركز الأدوات الذكي</b><small>تركيز · خطة · بطاقات · بحث سريع</small></div>
       </button>
     </div>
   </section>
@@ -209,6 +222,7 @@
         <button class="navbtn" onclick="showScreen('screen-review')">راجع الأخطاء 📋</button>
         <button class="navbtn primary" onclick="showScreen('screen-home')">الرئيسية 🏠</button>
       </div>
+      <button class="navbtn" style="width:100%;margin-top:10px" onclick="exportResultsPDF('last')">تصدير النتيجة كـ PDF 🖨️</button>
     </div>
   </section>
 
@@ -233,8 +247,58 @@
     </div>
     <div class="sectiontitle"><h2>الأوسمة</h2></div>
     <div class="badgesgrid" id="badgesGrid"></div>
+    <div class="sectiontitle"><h2>الإنجازات</h2></div>
+    <div class="badgesgrid achievementsgrid" id="achievementsGrid"></div>
     <div class="sectiontitle"><h2>سجل الامتحانات</h2><span id="historyCount"></span></div>
+    <button class="navbtn" style="margin-bottom:12px" onclick="exportResultsPDF('all')">تصدير كل النتائج كـ PDF 🖨️</button>
     <div id="historyList"></div>
+  </section>
+
+
+  <!-- SOCIAL -->
+  <section class="screen" id="screen-social">
+    <div class="backrow">
+      <button class="backbtn" onclick="showScreen('screen-home')">→</button>
+      <div class="crumb">الأصدقاء والدردشة</div>
+    </div>
+
+    <div class="social-hero">
+      <div class="social-avatar" id="socialMyAvatar">👤</div>
+      <div>
+        <h2 id="socialMyName">ملفي</h2>
+        <p id="socialMyUsername">@username</p>
+      </div>
+      <button class="share-mini" onclick="shareProfile()">مشاركة</button>
+    </div>
+
+    <div class="social-card">
+      <h3>➕ إضافة صديق</h3>
+      <div class="social-add-row">
+        <input id="friendUsernameInput" maxlength="20" placeholder="@username">
+        <button onclick="addFriendByUsername()">إضافة</button>
+      </div>
+      <small>يمكنك أيضًا مشاركة اسم المستخدم مع أصدقائك عبر أي تطبيق يدعم المشاركة.</small>
+    </div>
+
+    <div class="sectiontitle"><h2>أصدقائي</h2><span id="friendsCount">0</span></div>
+    <div id="friendsList" class="friends-list"></div>
+
+    <div class="sectiontitle"><h2>الدردشة</h2></div>
+    <div class="social-card chat-card">
+      <div class="chat-with" id="chatWithLabel">اختر صديقًا لبدء الدردشة</div>
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input-row">
+        <input id="chatInput" placeholder="اكتب رسالة..." disabled onkeydown="if(event.key==='Enter')sendChatMessage()">
+        <button id="chatSendBtn" onclick="sendChatMessage()" disabled>إرسال</button>
+      </div>
+    </div>
+
+    <div class="sectiontitle"><h2>إنجازاتي القابلة للمشاركة</h2></div>
+    <div class="social-card">
+      <p>شارك إنجازك على واتساب أو تيليغرام أو أي منصة يدعمها جهازك، واحصل على <b>+10 نقاط</b> عند أول مشاركة ناجحة كل يوم.</p>
+      <div id="shareAchievementsList"></div>
+      <button class="share-achievement-btn" onclick="shareLatestAchievement()">🏆 مشاركة آخر إنجاز +10</button>
+    </div>
   </section>
 
   <!-- ASSIGNMENTS / TESTS FROM EXAMDZ -->
@@ -283,30 +347,57 @@
   <!-- CENTURY TOOLS -->
   <section class="screen" id="screen-tools">
     <div class="backrow"><button class="backbtn" onclick="showScreen('screen-home')">→</button><div class="crumb">مركز الأدوات الذكي</div></div>
-    <div class="tools-hero"><div class="tools-orb">⚡</div><div><h2>Study DZ — Century Mode</h2><p>كل ما تحتاجه للمراجعة في مكان واحد: تركيز، خطة، بطاقات، إحصائيات ونسخة احتياطية.</p></div></div>
+    <div class="tools-hero"><div class="tools-orb">⚡</div><div><h2>Study DZ — Century Mode</h2><p>كل ما تحتاجه للمراجعة في مكان واحد: تركيز، خطة، بطاقات وإحصائيات.</p></div></div>
     <div class="tool-grid">
       <button class="tool-card" onclick="openFocusTimer()"><span>⏱️</span><b>وضع التركيز</b><small>جلسة بومودورو بدون تشتيت</small></button>
       <button class="tool-card" onclick="openPlanner()"><span>🗓️</span><b>خطة اليوم</b><small>أنشئ مهامك وتتبع إنجازك</small></button>
       <button class="tool-card" onclick="openFlashcards()"><span>🧠</span><b>بطاقات ذكية</b><small>اصنع بطاقات حفظ سريعة</small></button>
       <button class="tool-card" onclick="showStudyStats()"><span>📈</span><b>تحليلاتي</b><small>نقاط، امتحانات، دقة وشعلة</small></button>
-      <button class="tool-card" onclick="exportStudyData()"><span>💾</span><b>نسخ احتياطي</b><small>احفظ حسابك وتقدمك في ملف</small></button>
-      <button class="tool-card" onclick="document.getElementById('importStudyFile').click()"><span>♻️</span><b>استعادة</b><small>استرجع نسخة محفوظة</small></button>
       <button class="tool-card" onclick="installStudyApp()"><span>📲</span><b>تثبيت التطبيق</b><small>أضفه للشاشة الرئيسية إن كان مدعومًا</small></button>
-      <button class="tool-card" onclick="quickSearchStudy()"><span>🔎</span><b>بحث سريع</b><small>ابحث داخل أقسام المنصة</small></button>
+      <button class="tool-card" onclick="openGlobalSearch()"><span>🔎</span><b>بحث سريع</b><small>ابحث عن سورة أو مادة أو امتحان</small></button>
     </div>
-    <input id="importStudyFile" type="file" accept="application/json" hidden onchange="importStudyData(this.files[0])">
     <div id="toolsOutput" class="tools-output"></div>
   </section>
 
   <!-- QURAN -->
   <section class="screen" id="screen-quran">
+    <div class="quran-premium" id="fullQuranOnline">
+      <div class="quran-premium-head">
+        <div class="quran-emblem">☪</div>
+        <div>
+          <div class="quran-kicker">القرآن الكريم</div>
+          <h2>استماع السور أونلاين</h2>
+          <p>جميع السور متاحة للاستماع مباشرة من داخل الموقع</p>
+        </div>
+      </div>
+      <div class="quran-player-card">
+        <div class="quran-now-cover" id="quranNowCover">﷽</div>
+        <div class="quran-now-meta">
+          <span>يُستمع الآن</span>
+          <h3 id="quranNowTitle">اختر سورة</h3>
+          <small id="quranNowReader">رواية حفص عن عاصم</small>
+        </div>
+      </div>
+      <audio id="quranAudio" controls preload="none"></audio>
+      <div class="quran-tools">
+        <input id="quranOnlineSearch" class="quran-search" placeholder="ابحث عن اسم السورة أو رقمها..." oninput="renderOnlineSurahs()">
+        <select id="quranReaderSelect" onchange="renderOnlineSurahs()">
+          <option value="ar.alafasy">مشاري العفاسي</option>
+          <option value="ar.abdulbasitmurattal">عبد الباسط عبد الصمد</option>
+          <option value="ar.husary">محمود خليل الحصري</option>
+        </select>
+      </div>
+      <div class="quran-surah-count"><b>114</b><span>سورة متاحة للاستماع</span></div>
+      <div id="onlineSurahGrid" class="online-surah-grid"></div>
+    </div>
+
     <div class="backrow">
       <button class="backbtn" onclick="showScreen('screen-home')">→</button>
       <div class="crumb">الدراسة مع القرآن</div>
     </div>
     <div class="qsheet">
       <h3>🎧 رفيقك في المراجعة</h3>
-      <p class="hint">استمع إلى جميع سور القرآن الكريم عبر مصدر صوتي خارجي، بدون تنزيل ملفات MP3 عند تثبيت التطبيق. اختر أي سورة لتشغيلها، وسيظهر اسم السورة في النافذة الصغيرة.</p>
+      <p class="hint">استمع إلى السور المرفقة مباشرة، ويمكنك أيضًا إضافة ملفات تلاوة من جهازك. تُحفظ إعدادات الصوت والمؤقت تلقائيًا.</p>
 
       <div class="uploadbox">
         <b>📂 أضف تلاوات أخرى</b>
@@ -315,7 +406,19 @@
         <button class="filepill" onclick="document.getElementById('audioInput').click()">اختيار ملفات</button>
       </div>
 
-      <div class="quran-source-note">🌐 التلاوات تُشغَّل من مصدر خارجي لتخفيف حجم التطبيق.</div>
+      <div class="uploadbox yt-box">
+        <b>🎬 أضف من يوتيوب (اختياري)</b>
+        <small>الصق رابط فيديو/تلاوة من يوتيوب — يبقى MP3 المحلي هو الأساس، ويوتيوب خيار إضافي فقط</small>
+        <div class="yt-add-row">
+          <input type="text" id="ytUrlInput" class="yt-url-input" placeholder="https://youtube.com/watch?v=...">
+          <button class="filepill" onclick="addYouTubeTrack()">إضافة +</button>
+        </div>
+      </div>
+
+      <input type="text" id="quranSearch" class="quran-search" placeholder="🔎 ابحث عن سورة في قائمتك..." oninput="filterPlaylist()">
+
+
+      <div class="ytplayer" id="ytPlayerBox" style="display:none"><div id="ytPlayer"></div></div>
       <div class="playlist" id="playlistBox"></div>
 
       <div class="playerbar">
@@ -398,13 +501,44 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-title"><span>🔔</span><b>تذكير المراجعة اليومي</b></div>
+    <label class="settings-field">
+      <span>وقت التذكير</span>
+      <div class="settings-inline">
+        <input type="time" id="reminderTimeInput" value="18:00">
+        <button onclick="saveReminderSettings()">حفظ</button>
+      </div>
+    </label>
+    <button class="settings-action" id="reminderToggleBtn" onclick="toggleDailyReminder()"><span>🔕</span><b>تفعيل التذكير</b></button>
+    <div class="hint" style="margin-top:8px">يعمل التذكير أثناء فتح المتصفح أو التطبيق على جهازك في الوقت المحدد.</div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-title"><span>✨</span><b id="versionSettingsLabel">نسخة الموقع</b></div>
     <div class="version-card">
       <div><span class="version-badge">v2.6</span><b>Study DZ</b></div>
       <small id="versionText">نسخة 2026 · واجهة جديدة + ExamDZ + حسابات محلية</small>
     </div>
   </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title"><span>⚡</span><b>الأداء والتأثيرات</b></div>
+    <button class="settings-action" id="effectsToggleBtn" onclick="toggleEffects()"><span>✨</span><b>التأثيرات مفعّلة</b></button>
+    <div class="hint" style="margin-top:8px">التأثيرات البصرية (التمويه والحركات) قد تُبطئ الأجهزة الضعيفة. الموقع يكتشف ذلك تلقائيًا، لكن يمكنك التحكم يدويًا من هنا في أي وقت.</div>
+  </div>
 </aside>
+
+<div class="search-overlay" id="searchOverlay" aria-hidden="true">
+  <div class="search-card">
+    <div class="search-head">
+      <input id="globalSearchInput" placeholder="ابحث عن سورة أو مادة أو قسم..." oninput="runGlobalSearch(this.value)">
+      <button class="search-close" onclick="closeGlobalSearch()">✕</button>
+    </div>
+    <div id="globalSearchResults" class="search-results"></div>
+  </div>
+</div>
+
+<div id="printReport" class="print-report"></div>
 
 <div class="miniplayer" id="miniPlayer">
   <div class="inner">
@@ -419,39 +553,15 @@
   <button class="navitem" data-s="screen-papers" onclick="showScreen('screen-papers'); renderPapers();"><span class="ic">📝</span>الفروض</button>
   <button class="navitem" data-s="screen-quran" onclick="showScreen('screen-quran')"><span class="ic">🎧</span>القرآن</button>
   <button class="navitem" data-s="screen-progress" onclick="showScreen('screen-progress'); renderProgress();"><span class="ic">📊</span>تقدمي</button>
+  <button class="navitem" data-s="screen-social" onclick="openSocialHub()"><span class="ic">👥</span>الأصدقاء</button>
   <button class="navitem" data-s="screen-tools" onclick="showScreen('screen-tools'); initCenturyTools();"><span class="ic">⚡</span>أدوات</button>
 </div>
 
-<script>
-/* Immediate guest-entry fallback: never block the login screen on script loading. */
-if (typeof window.continueAsالزائر !== 'function') {
-  window.continueAsالزائر = function () {
-    const login = document.getElementById('loginScreen');
-    const app = document.getElementById('app');
-    if (login) login.style.display = 'none';
-    if (app) app.classList.add('الزائر-mode');
-    const top = document.getElementById('userNameTop');
-    if (top) top.textContent = 'الزائر 👤';
-  };
-}
-if (typeof window.toggleAuthMode !== 'function') {
-  window.toggleAuthMode = function () {
-    const box = document.getElementById('signupOnly');
-    if (box) box.classList.toggle('show');
-  };
-}
-if (typeof window.submitAuth !== 'function') {
-  window.submitAuth = function () {
-    const msg = document.getElementById('loginMsg');
-    if (msg) msg.textContent = 'جارٍ تحميل نظام الحساب… يمكنك الدخول كالزائر الآن.';
-  };
-}
-document.querySelectorAll('.login-card [data-auth-btn]').forEach(b => b.disabled = false);
-</script>
 <script src="js/users.js"></script>
 <script src="js/quran.js"></script>
+<script src="js/social.js"></script>
 <script src="js/app.js"></script>
 <script src="js/century.js"></script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js?v=2").catch(()=>{});}</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js?v=4").catch(()=>{});}</script>
 </body>
 </html>
